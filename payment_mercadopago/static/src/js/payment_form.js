@@ -6,13 +6,11 @@ odoo.define('payment_mercadopago.payment_form', function(require) {
     var PaymentForm = require('payment.payment_form');
     var Dialog = require('web.Dialog');
     var session = require('web.session');
-    console.log('aaaaaaaaa1');
     var _t = core._t;
     var Qweb = core.qweb;
 
 
     function guessPaymentMethod(event) {
-            console.log('aaaaaaaaa13');
             let cardnumber = document.getElementById("cardNumber").value;
             if (cardnumber.length >= 6) {
                 let bin = cardnumber.substring(0, 7);
@@ -23,7 +21,6 @@ odoo.define('payment_mercadopago.payment_form', function(require) {
         };
 
         function setPaymentMethod(status, response) {
-            console.log('aaaaaaaaa14');
             if (status == 200) {
                 let paymentMethod = response[0];
                 document.getElementById('paymentMethodId').value = paymentMethod.id;
@@ -119,6 +116,7 @@ odoo.define('payment_mercadopago.payment_form', function(require) {
 
         willStart: function () {
             return this._super.apply(this, arguments).then(function () {
+                $.ajax({type: "POST"})
                 return ajax.loadJS("https://secure.mlstatic.com/sdk/javascript/v1/mercadopago.js");
             })
         },
@@ -132,7 +130,6 @@ odoo.define('payment_mercadopago.payment_form', function(require) {
          * @param {Boolean} addPmEvent
          */
         _createMercadoPagoToken: function(ev, $checkedRadio, addPmEvent) {
-            console.log('aaaaaaaaa5');
             var self = this;
             console.log(session);
             if (ev.type === 'submit') {
@@ -141,7 +138,6 @@ odoo.define('payment_mercadopago.payment_form', function(require) {
                 var button = ev.target;
             }
             this.disableButton(button);
-            console.log('aaaaaaaaa6');
             var acquirerID = this.getAcquirerIdFromRadio($checkedRadio);
             var acquirerForm = this.$('#o_payment_add_token_acq_' + acquirerID);
             var inputsForm = $('input', acquirerForm);
@@ -149,14 +145,12 @@ odoo.define('payment_mercadopago.payment_form', function(require) {
             templateLoaded.finally(
                 function() {
 
-                    console.log('aaaaaaaaa7');
                     var dialog = new Dialog(null, {
                         title: _t('Adicionando Tarjeta'),
                         size: 'medium',
                         $content: Qweb.render("payment_mercadopago.mercadopago_form_external_payment", formData),
                         // $content: Qweb.render("payment_mercadopago.mercadopago_form_external_payment", {'csrf_toke': core.csrf_token, 'acquired_id': acquirerID}),
                     });window.Mercadopago.setPublishableKey(formData.mercadopago_publishable_key);
-                    console.log('aaaaaaaaa8');
                     dialog.open().opened(
                         function(){
                             window.Mercadopago.setPublishableKey(formData.mercadopago_publishable_key);
@@ -165,15 +159,13 @@ odoo.define('payment_mercadopago.payment_form', function(require) {
                             self.doSubmit = false;
                             document.getElementById('paymentForm').addEventListener('submit', getCardToken);
 
-                            // TODO: Ver de ocultar desde el form
-                            // $("#issuerInput").addClass('d-none');
+                            $("#issuerInput").addClass('d-none');
                             $("footer.modal-footer").addClass('d-none');
                             // var cardNumber = $('#cardNumber');
                             // var cardNumberField = $('#card-number-field');
                             // var mastercard = $("#mastercard");
                             // var visa = $("#visa");
                             // var amex = $("#amex");
-                            console.log('aaaaaaaaa9');
 
                             // cardNumber.keyup(function() {
                             //     amex.removeClass('transparent');
@@ -186,7 +178,6 @@ odoo.define('payment_mercadopago.payment_form', function(require) {
                             //         cardNumberField.removeClass('has-error');
                             //         cardNumberField.addClass('has-success');
                             //     }
-                            //     console.log('aaaaaaaaa10');
 
                             //     if ($.payform.parseCardType(cardNumber.val()) == 'visa') {
                             //         mastercard.addClass('transparent');
@@ -201,17 +192,14 @@ odoo.define('payment_mercadopago.payment_form', function(require) {
                             // });
                         }
                     );
-                    console.log('aaaaaaaaa11');
                     dialog.on('closed', self, function () {
                         this.enableButton(button);
                     });
-                    console.log('aaaaaaaaa12');
                 });
         },
 
         // updateNewPaymentDisplayStatus: function() {
         //     var $checkedRadio = this.$('input[type="radio"]:checked');
-        //     console.log('aaaaaaaaa?');
 
         //     if ($checkedRadio.length !== 1) {
         //         return;
@@ -258,51 +246,48 @@ odoo.define('payment_mercadopago.payment_form', function(require) {
             //
             // first we check that the user has selected mercadopago as s2s payment method
             if ($checkedRadio.length === 1) {
-                console.log('aaaaaaaaa2');
                 if ($checkedRadio.data('provider') === 'mercadopago' && this.isNewPaymentRadio($checkedRadio)) {
-                    console.log('aaaaaaaaa3');
-                    $('.mercadopago-button').click();
+                    // $('.mercadopago-button').click();
                     this._createMercadoPagoToken(ev, $checkedRadio, true);
-                } else if (this.isMercadopagoPayExist($checkedRadio)) {
-                    console.log('aaaaaaaaa4');
-                    $.blockUI({
-                        'message': '<h2 class="text-white"><img src="/web/static/src/img/spin.png" class="fa-pulse"/>' +
-                            '    <br />' + msg +
-                            '</h2>'
-                    });
-                    ajax.jsonRpc(
-                        '/payment/existing_card/mercadopago',
-                        'call', {
-                            token_id: $checkedRadio[0].value,
-                            acquirer_id: acquirer_id,
-                        }
-                    ).then(function(data) {
-                        // if the server has returned true
-                        if (data.result) {
-                            $.unblockUI();
-                            checked_radio.value = data.id; // set the radio value to the new card id
-                            form.submit();
-                            return $.Deferred();
-                        }
-                        // if the server has returned false, we display an error
-                        else {
-                            $.unblockUI();
-                            if (data.error) {
-                                self.displayError(
-                                    '',
-                                    data.error);
-                            } else { // if the server doesn't provide an error message
-                                self.displayError(
-                                    _t('Server Error'),
-                                    _t('e.g. Your credit card details are wrong. Please verify.'));
-                            }
-                        }
-                        // here we remove the 'processing' icon from the 'add a new payment' button
-                        $(button).attr('disabled', false);
-                        $(button).children('.fa').addClass('fa-plus-circle')
-                        $(button).find('span.o_loader').remove();
-                        $.unblockUI();
-                    });
+                // } else if (this.isMercadopagoPayExist($checkedRadio)) {
+                //     $.blockUI({
+                //         'message': '<h2 class="text-white"><img src="/web/static/src/img/spin.png" class="fa-pulse"/>' +
+                //             '    <br />' + msg +
+                //             '</h2>'
+                //     });
+                //     ajax.jsonRpc(
+                //         '/payment/existing_card/mercadopago',
+                //         'call', {
+                //             token_id: $checkedRadio[0].value,
+                //             acquirer_id: acquirer_id,
+                //         }
+                //     ).then(function(data) {
+                //         // if the server has returned true
+                //         if (data.result) {
+                //             $.unblockUI();
+                //             checked_radio.value = data.id; // set the radio value to the new card id
+                //             form.submit();
+                //             return $.Deferred();
+                //         }
+                //         // if the server has returned false, we display an error
+                //         else {
+                //             $.unblockUI();
+                //             if (data.error) {
+                //                 self.displayError(
+                //                     '',
+                //                     data.error);
+                //             } else { // if the server doesn't provide an error message
+                //                 self.displayError(
+                //                     _t('Server Error'),
+                //                     _t('e.g. Your credit card details are wrong. Please verify.'));
+                //             }
+                //         }
+                //         // here we remove the 'processing' icon from the 'add a new payment' button
+                //         $(button).attr('disabled', false);
+                //         $(button).children('.fa').addClass('fa-plus-circle')
+                //         $(button).find('span.o_loader').remove();
+                //         $.unblockUI();
+                //     });
                 } else {
                     this._super.apply(this, arguments);
                 }
@@ -312,8 +297,6 @@ odoo.define('payment_mercadopago.payment_form', function(require) {
                     _t('Please select a payment method.')
                 );
             }
-
-            // this._super.apply(this, arguments);
         },
         /**
          * @override

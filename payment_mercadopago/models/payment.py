@@ -190,6 +190,7 @@ class PaymentTransactionMercadoPago(models.Model):
     # --------------------------------------------------
 
     def mercadopago_s2s_do_transaction(self, **data):
+        import pdb; pdb.set_trace()
         # TODO: create tx with s2s type
         account = self.acquirer_id
         reference = self.reference or "ODOO-%s-%s" % (datetime.datetime.now().strftime('%y%m%d_%H%M%S'), self.partner_id.id)

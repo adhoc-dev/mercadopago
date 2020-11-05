@@ -52,12 +52,6 @@ class MercadoPagoController(http.Controller):
             }
             return res
 
-        if not token:
-            res = {
-                'result': False,
-            }
-            return res
-
         res = {
             'result': True,
             'id': token.id,
@@ -72,11 +66,10 @@ class MercadoPagoController(http.Controller):
 
         return res
 
-    @http.route(['/payment/mercadopago/s2s/create'], type='http', auth='public')
-    def mercadopago_s2s_create(self, **post):
-        acquirer_id = int(post.get('acquirer_id'))
-        acquirer = request.env['payment.acquirer'].browse(acquirer_id)
-        acquirer.s2s_process(post)
-        import pdb; pdb.set_trace()
-        return utils.redirect("/payment/process")
-
+    # @http.route(['/payment/mercadopago/s2s/create'], type='http', auth='public')
+    # def mercadopago_s2s_create(self, **post):
+    #     acquirer_id = int(post.get('acquirer_id'))
+    #     acquirer = request.env['payment.acquirer'].browse(acquirer_id)
+    #     acquirer.s2s_process(post)
+    #     import pdb; pdb.set_trace()
+    #     return utils.redirect("/payment/process")

@@ -2,7 +2,7 @@
  
     <template id="mercadopago_form_external_payment" name="Mercadopago External Form">
         <t t-name="payment_mercadopago.mercadopago_form_external_payment">
-            <form action="/payment/mercadopago/s2s/create" method="post" id="paymentForm" style="background-color: lightgray;">
+            <form action="/payment/mercadopago/s2s/create_json_3ds" method="post" id="paymentForm" style="background-color: lightgray;">
                 <div class="creditCardForm">
                     <div class="heading">
                         <h3>Detalles del comprador</h3>
