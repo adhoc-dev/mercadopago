@@ -94,6 +94,10 @@ class ExtendedWebsiteSale(WebsiteSale):
         if 'response' in existing_customer:
             if not partner_id.mp_id:
                 # TODO: Hacer esto con comprension de listo
+                _logger.info('MP-------------------------------------------------CUSTOMER')
+                _logger.info(existing_customer)
+                _logger.info('MP-------------------------------------------------CUSTOMER')
+
                 for cust in existing_customer.get('response').get('results'):
                     if not cust.get('email') == partner_id.email:
                         exist_customer = False
