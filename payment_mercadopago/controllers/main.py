@@ -150,8 +150,7 @@ class ExtendedWebsiteSale(WebsiteSale):
                         payment_method_id,
                         kwargs.get('token'),
                         payment_id,
-                        card_id=card.get('id'),
-                        cvv=cvv).id,
+                        card_id=card.get('id')).id
 
         else:
             # Creando la tarjeta y tokenizandola
@@ -179,8 +178,7 @@ class ExtendedWebsiteSale(WebsiteSale):
                     payment_method_id,
                     kwargs.get('token'),
                     payment_id,
-                    card_id=card.get('id'),
-                    cvv=cvv).id
+                    card_id=card.get('id')).id
 
         request.session.update(kwargs)
         request.session.update({'payment_id': acquirer_id})
@@ -358,7 +356,7 @@ class ExtendedWebsiteSale(WebsiteSale):
                 auth='public')
     def find_existing_mercadopago_card(self, **kwargs):
         pm_id = kwargs.get('token_id', False)
-        token_card = kwargs.get('token', False)
+        # token_card = kwargs.get('token', False)
         request.session.update(kwargs)
         request.session.update({'payment_id': int(kwargs.get('acquirer_id'))})
 
@@ -403,6 +401,11 @@ class ExtendedWebsiteSale(WebsiteSale):
             )
         PaymentProcessing.add_payment_transaction(transaction_id)
         mp = mercadopago.MP(payment_id.mercadopago_secret_key)
+        token_result = mp.post("/v1/card_tokens",
+                               {'card_id': payment_token.card_id})
+        if token_result.get('status') == 201:
+            response = token_result.get('response')
+            token_card = response.get('id')
 
         payment_data = {
             "token": token_card,
@@ -454,32 +457,32 @@ class ExtendedWebsiteSale(WebsiteSale):
             mercadopago_authorize_amount=mercadopago_authorize_amount,
         )
 
-    @http.route(['/get_public_key'],
-                type='json', auth="public")
-    def get_get_public_key(self, **kwargs):
-        acquirer_id = kwargs.get('acquirer_id')
-        mercadopago_publishable_key = request.env['payment.acquirer'].browse(
-            acquirer_id).mercadopago_publishable_key
-        return dict(
-            mercadopago_publishable_key=mercadopago_publishable_key,
-        )
+    # @http.route(['/get_public_key'],
+    #             type='json', auth="public")
+    # def get_get_public_key(self, **kwargs):
+    #     acquirer_id = kwargs.get('acquirer_id')
+    #     mercadopago_publishable_key = request.env['payment.acquirer'].browse(
+    #         acquirer_id).mercadopago_publishable_key
+    #     return dict(
+    #         mercadopago_publishable_key=mercadopago_publishable_key,
+    #     )
 
-    @http.route(['/get_cvv'],
-                type='json', auth="public")
-    def get_get_public_key(self, **kwargs):
-        acquirer_id = kwargs.get('acquirer_id')
-        mercadopago_publishable_key = request.env['payment.acquirer'].browse(
-            acquirer_id).mercadopago_publishable_key
-
-        card_id = kwargs.get('card_id')
-        payment_token = request.env['payment.token'].search(
-            [
-                ('card_id', '=', card_id)
-            ]
-        )
-        cvv = payment_token and payment_token[0].cvv
-        cvv = base64.decodebytes(cvv.encode()).decode()
-        return dict(
-            mercadopago_publishable_key=mercadopago_publishable_key,
-            cvv=cvv,
-        )
+    # @http.route(['/get_cvv'],
+    #             type='json', auth="public")
+    # def get_get_public_key(self, **kwargs):
+    #     acquirer_id = kwargs.get('acquirer_id')
+    #     mercadopago_publishable_key = request.env['payment.acquirer'].browse(
+    #         acquirer_id).mercadopago_publishable_key
+    #
+    #     card_id = kwargs.get('card_id')
+    #     payment_token = request.env['payment.token'].search(
+    #         [
+    #             ('card_id', '=', card_id)
+    #         ]
+    #     )
+    #     cvv = payment_token and payment_token[0].cvv
+    #     cvv = base64.decodebytes(cvv.encode()).decode()
+    #     return dict(
+    #         mercadopago_publishable_key=mercadopago_publishable_key,
+    #         cvv=cvv,
+    #     )

@@ -346,35 +346,35 @@ odoo.define('payment_mercadopago.payment_form', function(require) {
                 } else if (this.isMercadopagoPayExist($checkedRadio)) {
                     $.blockUI();
                     var acquirerID = this.getAcquirerIdFromRadio($checkedRadio);
-                    var card_id = $checkedRadio.data('card_id');
+                    // var card_id = $checkedRadio.data('card_id');
                     var token_id = $checkedRadio.val();
-                    ajax.jsonRpc('/get_cvv',
-                        'call',
-                        {
-                            acquirer_id: acquirerID,
-                            card_id:card_id
-                        }).then(function(data) {
-                            let $form = $(
-                                "<form>" +
-                                    "<li>" +
-                                        "<select id=\"cardId\" name=\"cardId\" data-checkout='cardId'>" +
-                                        "<option value=\""+ card_id +"\">" +
-                                        "</select>" +
-                                    "</li>" +
-                                    "<li id=\"cvv\">" +
-                                        "<input type=\"text\" id=\"cvv\" data-checkout=\"securityCode\" value=\"" + data.cvv +"\" />" +
-                                    "</li>"  +
-                                "</form>");
-                            window.Mercadopago.setPublishableKey(data.mercadopago_publishable_key);
-                                    window.Mercadopago.getIdentificationTypes();
-                            window.Mercadopago.createToken($form, function (status, response)
-                            {
-                                 if (status == 200 || status == 201) {
-                                     var token = response.id;
+                    // ajax.jsonRpc('/get_cvv',
+                    //     'call',
+                    //     {
+                    //         acquirer_id: acquirerID,
+                    //         card_id:card_id
+                    //     }).then(function(data) {
+                    //         let $form = $(
+                    //             "<form>" +
+                    //                 "<li>" +
+                    //                     "<select id=\"cardId\" name=\"cardId\" data-checkout='cardId'>" +
+                    //                     "<option value=\""+ card_id +"\">" +
+                    //                     "</select>" +
+                    //                 "</li>" +
+                    //                 "<li id=\"cvv\">" +
+                    //                     "<input type=\"text\" id=\"cvv\" data-checkout=\"securityCode\" value=\"" + data.cvv +"\" />" +
+                    //                 "</li>"  +
+                    //             "</form>");
+                    //         window.Mercadopago.setPublishableKey(data.mercadopago_publishable_key);
+                    //                 window.Mercadopago.getIdentificationTypes();
+                    //         window.Mercadopago.createToken($form, function (status, response)
+                    //         {
+                    //              if (status == 200 || status == 201) {
+                    //                  var token = response.id;
                                      ajax.jsonRpc(
                                          '/payment/existing_card/mercadopago',
                                          'call', {
-                                             token: token,
+                                             // token: token,
                                              token_id: token_id,
                                              acquirer_id: acquirerID,
                                          }
@@ -404,15 +404,15 @@ odoo.define('payment_mercadopago.payment_form', function(require) {
                                         $(button).find('span.o_loader').remove();
                                         $.unblockUI();
                                     });
-                                 }
-                                 else {
-                                     if (response.cause) {
-                                         var msg = ERRORS[response.cause[0].code]
-                                         alert("Verifique algunos datos del formulario!\n" + msg)
-                                     }
-                                 }
-                            });
-                    });
+                                 // }
+                                 // else {
+                                 //     if (response.cause) {
+                                 //         var msg = ERRORS[response.cause[0].code]
+                                 //         alert("Verifique algunos datos del formulario!\n" + msg)
+                                 //     }
+                                 // }
+                            // });
+                    // });
                 } else {
                     this._super.apply(this, arguments);
                 }
