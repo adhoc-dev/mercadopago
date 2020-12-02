@@ -375,7 +375,7 @@ odoo.define('payment_mercadopago.payment_form', function(require) {
                                     $content: Qweb.render('payment_mercadopago.cvv_mercadopago', {}),
                                     buttons: [
                                         {
-                                            text: _t("Pay"),
+                                            text: _t("Pagar"),
                                             classes: 'btn-primary',
                                             click: function () {
                                                 $.blockUI();
@@ -447,7 +447,7 @@ odoo.define('payment_mercadopago.payment_form', function(require) {
                                             },
                                         },
                                         {
-                                            text: _t("Close"),
+                                            text: _t("Cerrar"),
                                             close: true,
                                         },
                                     ],

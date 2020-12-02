@@ -1,18 +1,11 @@
 # coding: utf-8
-from werkzeug import urls
 
-import hashlib
-import hmac
 import logging
-import time
 
 from odoo import _, api, fields, models
-from odoo.addons.payment.models.payment_acquirer import ValidationError
+
 # from odoo.addons.payment_mercadopago.controllers.sdk-python.mercadopago import
 # from ..controllers.main import MercadoPagoController
-from odoo.tools.float_utils import float_compare, float_repr
-from odoo.exceptions import UserError
-from odoo.osv import expression
 
 _logger = logging.getLogger(__name__)
 

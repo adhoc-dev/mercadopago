@@ -1,29 +1,16 @@
-##############################################################################
-# For copyright and license notices, see __manifest__.py file in module root
-# directory
-##############################################################################
-
-import logging
-import pprint
-import werkzeug
 import base64
-from odoo import http, fields, _
-from odoo.exceptions import ValidationError
-import urllib.request
-import urllib
-from odoo.http import request
-from odoo.tools.safe_eval import safe_eval
-from uuid import uuid4
-import json
-from datetime import datetime
+import logging
+
 from odoo.addons.payment.controllers.portal import PaymentProcessing
+
+from odoo import http, fields, _
+from odoo.http import request
 
 _logger = logging.getLogger(__name__)
 try:
     from mercadopago import mercadopago
 except ImportError:
     _logger.debug('Cannot import external_dependency mercadopago')
-
 
 from odoo.addons.website_sale.controllers.main import WebsiteSale
 from odoo.addons.payment.controllers.portal import WebsitePayment
@@ -79,7 +66,7 @@ class ExtendedWebsitePayment(WebsitePayment):
 class ExtendedWebsiteSale(WebsiteSale):
     def _get_shop_payment_values(self, order, **kwargs):
         res = super(ExtendedWebsiteSale, self)._get_shop_payment_values(
-                order, **kwargs
+            order, **kwargs
         )
         res.update(
             {
@@ -135,18 +122,18 @@ class ExtendedWebsiteSale(WebsiteSale):
                 exist_customer = partner_id.mp_id
         if not exist_customer:
             customer_data = {
-                    "email": partner_id.email,
-                    "first_name": partner_id.name,
-                    "last_name": partner_id.lastname,
-                    "identification": {
-                        "type": kwargs.get('docType'),
-                        "number": kwargs.get('docNumber')
-                        },
-                    "address": {
-                        "zip_code": partner_id.zip,
-                        "street_name": partner_id.street,
-                        },
-                    "description": "Creacion de cliente"                
+                "email": partner_id.email,
+                "first_name": partner_id.name,
+                "last_name": partner_id.lastname,
+                "identification": {
+                    "type": kwargs.get('docType'),
+                    "number": kwargs.get('docNumber')
+                },
+                "address": {
+                    "zip_code": partner_id.zip,
+                    "street_name": partner_id.street,
+                },
+                "description": "Creacion de cliente"
             }
             customer_result = mp.post('/v1/customers', customer_data)
             if customer_result.get('status') == 201:
@@ -189,8 +176,8 @@ class ExtendedWebsiteSale(WebsiteSale):
             card_result = create_card(kwargs.get('token'), exist_customer)
             card = card_result.get('response')
             card_name = card['first_six_digits'] \
-                    + 'XXXXXX' \
-                    + card['last_four_digits']
+                        + 'XXXXXX' \
+                        + card['last_four_digits']
             pm_id = payment_token.search(
                 [
                     ('card_id', '=', card.get('id')),
@@ -250,7 +237,7 @@ class ExtendedWebsiteSale(WebsiteSale):
                 "payer": {
                     "email": email,
                 },
-                #  'capture': False
+                'capture': True
             }
             if issuer_id:
                 payment_data.update(issuer_id=issuer_id)
@@ -282,7 +269,7 @@ class ExtendedWebsiteSale(WebsiteSale):
                         return request.render("website_sale.payment",
                                               render_values)
             else:
-                msg = ERRORS.get(str(payment_result.get('response').get('cause',[])[0]['code']), False)
+                msg = ERRORS.get(str(payment_result.get('response').get('cause', [])[0]['code']), False)
                 if not msg:
                     msg = str(payment_result.get('response').get('message'))
                 if order_id:
@@ -353,7 +340,7 @@ class ExtendedWebsiteSale(WebsiteSale):
                     render_values['errors'] = [
                         [_('Error!.'),
                          _('The transaction could not be generated in our '
-                                   'e-commerce')]]
+                           'e-commerce')]]
                     return request.render("website_sale.payment", render_values)
                 else:
                     order_id = request.env['sale.order'].create(
@@ -361,11 +348,11 @@ class ExtendedWebsiteSale(WebsiteSale):
                     render_values = self._get_shop_payment_values(order_id,
                                                                   **kwargs)
                     render_values['errors'] = [
-                        [_('Error!.'),_('The transaction could not be generated in our '
-                                   'e-commerce')]]
+                        [_('Error!.'), _('The transaction could not be generated in our '
+                                         'e-commerce')]]
                     return request.render("website_sale.payment", render_values)
         else:
-            msg = ERRORS.get(str(payment_result.get('response').get('cause',[])[0]['code']))
+            msg = ERRORS.get(str(payment_result.get('response').get('cause', [])[0]['code']))
             if not msg:
                 msg = str(payment_result.get('response').get('message'))
             if order_id:

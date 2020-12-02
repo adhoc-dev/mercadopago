@@ -5,11 +5,13 @@
         <field name="name">MercadoPago</field>
         <field name="display_as">Credit Card (powered by MercadoPago)</field>
         <field name="provider">mercadopago</field>
+        <field name="payment_flow">s2s</field>
         <field name="company_id" ref="base.main_company"/>
         <!-- <field name="sequence">3</field> -->
-        <field name="mercadopago_client_id">dummy</field>
-        <field name="mercadopago_secret_key">dummy</field>
-        <field name="mercadopago_publishable_key">dummy</field>
+        <field name="mercadopago_client_id">8905835050132286</field>
+        <field name="mercadopago_secret_key">TEST-8905835050132286-091418-b1fab1a460a7c91ace8e34dbf1490e5e-261177322</field>
+        <field name="mercadopago_publishable_key">TEST-e04fc46c-359a-451d-927d-c8eff5f1eabf</field>
+        <field name="mercadopago_authorize_amount">50</field>
         <field name="view_template_id" ref="mercadopago_form"/>
         <field name="registration_view_template_id" ref="mercadopago_s2s_form"/>
         <field name="image_128" type="base64" file="payment_mercadopago/static/description/icon.png"/>

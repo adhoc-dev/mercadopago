@@ -5,10 +5,10 @@
             <form action="/process_payment" method="post" id="paymentForm" style="background-color: lightgray;">
                 <div class="creditCardForm">
                     <t t-if="mpm">
-                        <div t-name="Authorization_msg" class="alert alert-danger" role="alert" style="margin-left:10px">
-                            <h5 class="text-danger" style="margin: 0;">Se va a realizar una autorización
+                        <div t-name="Authorization_msg" class="alert alert-info" role="alert" style="margin-left:10px">
+                            <h6 class="text-info" style="margin: 0;">Se va a realizar una autorización
                                 de $ <span t-esc="mercadopago_authorize_amount"/>
-                                para validar la tarjeta, una vez validada se liberará la autorización.</h5>
+                                para validar la tarjeta, una vez validada se liberará la autorización.</h6>
                         </div>
                     </t>
                     <div class="heading">
@@ -88,7 +88,7 @@
                             <select type="text" id="installments" name="installments"></select>
                         </div>
                         <div class="form-group" id="save_card" t-att-style="mpm == 0 ? 'float: right;' : 'display: none;'">
-                            <label for="amount">Desea guardar esta tarjeta??</label>
+                            <label for="amount">Desea guardar esta tarjeta?</label>
                             <input type="checkbox" name="save_card" style="float: right;" class="id_payment_token"/>
                         </div>
                         <div class="form-group" id="pay-now" style="display: inline-block;text-align: center;">
