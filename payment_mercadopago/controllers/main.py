@@ -26,6 +26,7 @@ except ImportError:
 
 
 from odoo.addons.website_sale.controllers.main import WebsiteSale
+from odoo.addons.payment.controllers.portal import WebsitePayment
 
 ERRORS = {
     '2077': 'No se admite la captura diferida.',
@@ -49,6 +50,32 @@ ERRORS = {
 }
 
 
+class ExtendedWebsitePayment(WebsitePayment):
+    @http.route(['/my/payment_method'], type='http', auth="user", website=True)
+    def payment_method(self, **kwargs):
+        acquirers = list(request.env['payment.acquirer'].search([
+            ('state', 'in', ['enabled', 'test']), ('registration_view_template_id', '!=', False),
+            ('payment_flow', '=', 's2s'), ('company_id', '=', request.env.company.id)
+        ]))
+        partner = request.env.user.partner_id
+        payment_tokens = partner.payment_token_ids
+        payment_tokens |= partner.commercial_partner_id.sudo().payment_token_ids
+        pms = request.env['payment.token'].search(
+            [
+                ('id', 'in', payment_tokens.ids)
+            ], order='payment_method_id')
+        return_url = request.params.get('redirect', '/my/payment_method')
+        values = {
+            'pms': pms,
+            'acquirers': acquirers,
+            'error_message': [kwargs['error']] if kwargs.get('error') else False,
+            'return_url': return_url,
+            'bootstrap_formatting': True,
+            'partner_id': partner.id
+        }
+        return request.render("payment.pay_methods", values)
+
+
 class ExtendedWebsiteSale(WebsiteSale):
     def _get_shop_payment_values(self, order, **kwargs):
         res = super(ExtendedWebsiteSale, self)._get_shop_payment_values(
@@ -66,6 +93,7 @@ class ExtendedWebsiteSale(WebsiteSale):
     @http.route(['/process_payment'], type='http',
                 auth='public', website=True)
     def payment_mercadogo_result(self, **kwargs):
+        save_card = kwargs.get('save_card', False) and kwargs.get('save_card') == 'on'
         payment_token = request.env['payment.token'].sudo()
         acquirer_id = int(kwargs.get('acquired_id')) if \
             kwargs.get('acquired_id', False) else False
@@ -141,7 +169,7 @@ class ExtendedWebsiteSale(WebsiteSale):
                         ('partner_id', '=', partner_id.id),
                     ], limit=1
                 )
-                if not pm_id:
+                if not pm_id and save_card:
                     pm_id = payment_token.mercadopago_create_payment_token(
                         card_name,
                         request.env.user.partner_id.id,
@@ -169,7 +197,7 @@ class ExtendedWebsiteSale(WebsiteSale):
                     ('partner_id', '=', partner_id.id),
                 ], limit=1
             )
-            if not pm_id:
+            if not pm_id and save_card:
                 pm_id = payment_token.mercadopago_create_payment_token(
                     card_name,
                     request.env.user.partner_id.id,
@@ -183,7 +211,8 @@ class ExtendedWebsiteSale(WebsiteSale):
         request.session.update(kwargs)
         request.session.update({'payment_id': acquirer_id})
         try:
-            payment_token_id = int(pm_id)
+            if save_card:
+                payment_token_id = int(pm_id)
         except ValueError:
             if order_id:
                 render_values = self._get_shop_payment_values(order_id,
@@ -197,12 +226,17 @@ class ExtendedWebsiteSale(WebsiteSale):
                 render_values['errors'] = [[_('Error!.'), _('Invalid Token')]]
                 return request.render("website_sale.payment", render_values)
 
-        payment_token = request.env['payment.token'].browse(payment_token_id)
-        payment_id = payment_token.acquirer_id
-        partner_id = payment_token.partner_id.id
-        issuer_id = payment_token.issuer_id
-        installments = payment_token.installments
-        payment_method_id = payment_token.payment_method_id
+        if save_card:
+            payment_token = request.env['payment.token'].browse(payment_token_id)
+            email = payment_token.partner_id.email
+            payment_id = payment_token.acquirer_id
+            partner_id = payment_token.partner_id
+            issuer_id = payment_token.issuer_id
+            installments = payment_token.installments
+            payment_method_id = payment_token.payment_method_id
+        else:
+            email = kwargs.get('email', '')
+
         pmp = kwargs.get('pmp', False) and kwargs.get('pmp', False) == '1' or False
         if not order_id or pmp:
             mp = mercadopago.MP(payment_id.mercadopago_secret_key)
@@ -214,7 +248,7 @@ class ExtendedWebsiteSale(WebsiteSale):
                                "vendas na hora",
                 "payment_method_id": payment_method_id,
                 "payer": {
-                    "email": payment_token.partner_id.email,
+                    "email": email,
                 },
                 #  'capture': False
             }
@@ -284,7 +318,7 @@ class ExtendedWebsiteSale(WebsiteSale):
                     'amount': order_id.amount_total,
                     'return_url': '/shop/payment/validate',
                     'currency_id': order_id.currency_id.id,
-                    'partner_id': partner_id,
+                    'partner_id': partner_id.id,
                     'acquirer_id': payment_id.id,
                     'date': fields.Datetime.now(),
                     'state': 'draft',
@@ -300,7 +334,7 @@ class ExtendedWebsiteSale(WebsiteSale):
                            "vendas na hora",
             "payment_method_id": payment_method_id,
             "payer": {
-                "email": payment_token.partner_id.email,
+                "email": email,
             }
         }
         if issuer_id:
@@ -356,7 +390,7 @@ class ExtendedWebsiteSale(WebsiteSale):
                 auth='public')
     def find_existing_mercadopago_card(self, **kwargs):
         pm_id = kwargs.get('token_id', False)
-        # token_card = kwargs.get('token', False)
+        token_card = kwargs.get('token', False)
         request.session.update(kwargs)
         request.session.update({'payment_id': int(kwargs.get('acquirer_id'))})
 
@@ -401,11 +435,11 @@ class ExtendedWebsiteSale(WebsiteSale):
             )
         PaymentProcessing.add_payment_transaction(transaction_id)
         mp = mercadopago.MP(payment_id.mercadopago_secret_key)
-        token_result = mp.post("/v1/card_tokens",
-                               {'card_id': payment_token.card_id})
-        if token_result.get('status') == 201:
-            response = token_result.get('response')
-            token_card = response.get('id')
+        # token_result = mp.post("/v1/card_tokens",
+        #                        {'card_id': payment_token.card_id})
+        # if token_result.get('status') == 201:
+        #     response = token_result.get('response')
+        #     token_card = response.get('id')
 
         payment_data = {
             "token": token_card,
@@ -452,20 +486,22 @@ class ExtendedWebsiteSale(WebsiteSale):
                 type='json', auth="public")
     def get_mercadopago_authorize_amount(self, **kwargs):
         acquirer_id = kwargs.get('acquirer_id')
+        email = request.env.user.email
         mercadopago_authorize_amount = request.env['payment.acquirer'].browse(acquirer_id).mercadopago_authorize_amount
         return dict(
             mercadopago_authorize_amount=mercadopago_authorize_amount,
+            email=email
         )
 
-    # @http.route(['/get_public_key'],
-    #             type='json', auth="public")
-    # def get_get_public_key(self, **kwargs):
-    #     acquirer_id = kwargs.get('acquirer_id')
-    #     mercadopago_publishable_key = request.env['payment.acquirer'].browse(
-    #         acquirer_id).mercadopago_publishable_key
-    #     return dict(
-    #         mercadopago_publishable_key=mercadopago_publishable_key,
-    #     )
+    @http.route(['/get_public_key'],
+                type='json', auth="public")
+    def get_get_public_key(self, **kwargs):
+        acquirer_id = kwargs.get('acquirer_id')
+        mercadopago_publishable_key = request.env['payment.acquirer'].browse(
+            acquirer_id).mercadopago_publishable_key
+        return dict(
+            mercadopago_publishable_key=mercadopago_publishable_key,
+        )
 
     # @http.route(['/get_cvv'],
     #             type='json', auth="public")

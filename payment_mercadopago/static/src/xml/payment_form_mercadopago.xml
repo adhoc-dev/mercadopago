@@ -1,9 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
- 
+
     <template id="mercadopago_form_external_payment" name="Mercadopago External Form">
         <t t-name="payment_mercadopago.mercadopago_form_external_payment">
             <form action="/process_payment" method="post" id="paymentForm" style="background-color: lightgray;">
                 <div class="creditCardForm">
+                    <t t-if="mpm">
+                        <div t-name="Authorization_msg" class="alert alert-danger" role="alert" style="margin-left:10px">
+                            <h5 class="text-danger" style="margin: 0;">Se va a realizar una autorización
+                                de $ <span t-esc="mercadopago_authorize_amount"/>
+                                para validar la tarjeta, una vez validada se liberará la autorización.</h5>
+                        </div>
+                    </t>
                     <div class="heading">
                         <h3>Detalles del comprador</h3>
                     </div>
@@ -12,7 +19,7 @@
                             <div class="row">
                                 <div class="form-group" id="email">
                                     <label for="email">E-mail</label>
-                                    <input id="email" class="form-control" name="email" type="text" value="test@test.com"/>
+                                    <input id="email" class="form-control" style="background: #e7e9db;" name="email" type="text" t-att-value="email" readonly="True"/>
                                </div>
                             </div>
                             <div class="row">
@@ -80,9 +87,9 @@
                             <label for="installments">Cuotas</label>
                             <select type="text" id="installments" name="installments"></select>
                         </div>
-                        <div class="form-group" id="amount" t-att-style="mpm == 1 ? '' : 'display: none;'">
-                            <label for="amount">Monto de Autorizo</label>
-                            <input class="form-control" type="text" id="amount" name="amount" t-att-value="mercadopago_authorize_amount" readonly="True"></input>
+                        <div class="form-group" id="save_card" t-att-style="mpm == 0 ? 'float: right;' : 'display: none;'">
+                            <label for="amount">Desea guardar esta tarjeta??</label>
+                            <input type="checkbox" name="save_card" style="float: right;" class="id_payment_token"/>
                         </div>
                         <div class="form-group" id="pay-now" style="display: inline-block;text-align: center;">
                             <input type="hidden" name="transactionAmount" id="transactionAmount" t-att-value="tamount" />
@@ -100,6 +107,7 @@
                             </t>
                             <br/>
                         </div>
+                        <input type="hidden" name="save_card" style="float: right;" class="id_payment_token" value="on"/>
                     </div>
                 </div>
             </form>

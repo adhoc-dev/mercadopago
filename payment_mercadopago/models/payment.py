@@ -12,6 +12,7 @@ from odoo.addons.payment.models.payment_acquirer import ValidationError
 # from ..controllers.main import MercadoPagoController
 from odoo.tools.float_utils import float_compare, float_repr
 from odoo.exceptions import UserError
+from odoo.osv import expression
 
 _logger = logging.getLogger(__name__)
 
@@ -36,6 +37,34 @@ class PaymentAcquirerMercadoPago(models.Model):
     mercadopago_authorize_amount = fields.Float(
         string='Authorize amount'
     )
+
+    # def _get_available_payment_input(self, partner=None, company=None):
+    #     """ Generic (model) method that fetches available payment mechanisms
+    #     to use in all portal / eshop pages that want to use the payment form.
+    #
+    #     It contains
+    #
+    #      * acquirers: record set of both form and s2s acquirers;
+    #      * pms: record set of stored credit card data (aka payment.token)
+    #             connected to a given partner to allow customers to reuse them """
+    #     if not company:
+    #         company = self.env.company
+    #     if not partner:
+    #         partner = self.env.user.partner_id
+    #
+    #     domain = expression.AND([
+    #         ['&', ('state', 'in', ['enabled', 'test']), ('company_id', '=', company.id)],
+    #         ['|', ('country_ids', '=', False), ('country_ids', 'in', [partner.country_id.id])]
+    #     ])
+    #     active_acquirers = self.search(domain)
+    #     acquirers = active_acquirers.filtered(lambda acq: (acq.payment_flow == 'form' and acq.view_template_id) or
+    #                                                            (acq.payment_flow == 's2s' and acq.registration_view_template_id))
+    #     return {
+    #         'acquirers': acquirers,
+    #         'pms': self.env['payment.token'].search([
+    #             ('partner_id', '=', partner.id),
+    #             ('acquirer_id', 'in', acquirers.ids)], order='payment_method_id ASC'),
+    #     }
 
     @api.onchange('provider', 'check_validity')
     def onchange_check_validity(self):
