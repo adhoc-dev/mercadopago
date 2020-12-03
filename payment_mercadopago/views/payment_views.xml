@@ -13,7 +13,7 @@
                         <field name="mercadopago_url" attrs="{'required':[ ('provider', '=', 'mercadopago'), ('state', '!=', 'disabled')]}"/>
                         <field name="mercadopago_authorize_amount" attrs="{'required':[('provider', '=', 'mercadopago'), ('state', '!=', 'disabled')]}"/>
                         <div class="alert alert-info" colspan="2">
-                            Recomendamos utilizar montos cercanos al equivalente a 1 dólar
+                            Recomendamos utilizar montos cercanos al equivalente a 1 USD
                         </div>
                         <a colspan="2" href="https://www.mercadopago.com/mla/account/credentials" target="_blank">How to generate this credentials</a>
                     </group>
