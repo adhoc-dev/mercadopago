@@ -182,7 +182,7 @@ odoo.define('payment_mercadopago.payment_form', function(require) {
                         function() {
                             var dialog = new Dialog(null, {
                                 title: _t('Adicionando Tarjeta'),
-                                size: 'medium',
+                                size: 'extra-medium',
                                 $content: Qweb.render("payment_mercadopago.mercadopago_form_external_payment",
                                     {
                                         'acquired_id': acquirerID,
@@ -303,7 +303,8 @@ odoo.define('payment_mercadopago.payment_form', function(require) {
                         }).then(function(data) {
                             var dialog = new Dialog(null, {
                                 title: _t('Adicionando Tarjeta'),
-                                size: 'medium',
+                                size: 'extra-medium',
+                                // width: "90%",
                                 $content: Qweb.render("payment_mercadopago.mercadopago_form_external_payment",
                                     {
                                         'acquired_id': acquirerID,

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <data noupdate="1">
+    <data>
 
 		<template id="mercadopago_form">
 			<div>
@@ -52,12 +52,11 @@
             <xpath expr="//t[@t-foreach='pms']/t[1]" position="replace">
                 <t t-if="not verify_validity or (pm.acquirer_id.check_validity and pm.verified) or not pm.acquirer_id.check_validity">
                     <div class="card-body o_payment_acquirer_select">
-<!--                        <span t-esc="pm.payment_method_id"/>-->
                         <t t-if="pm.payment_method_id == 'master'">
                             <img alt="MasterCard" src="/payment_mercadopago/static/src/img/mastercard.jpg" title="MasterCard" style="max-width: 45px; border-radius: 3px;"/>
                         </t>
                         <t t-if="pm.payment_method_id == 'visa'">
-                            <img alt="Visa" src="/payment_mercadopago/static/src/img/visa.jpg" title="Visa" style="max-width: 45px; border-radius: 3px;"/>
+                            <img alt="Visa" src="/payment_mercadopago/static/src/img/visa.png" title="Visa" style="max-width: 45px; border-radius: 3px;"/>
                         </t>
                         <t t-if="pm.payment_method_id == 'amex'">
                             <img alt="American Express" src="/payment_mercadopago/static/src/img/amex.jpg" title="American Express" style="max-width: 45px; border-radius: 3px;"/>

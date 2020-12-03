@@ -7,7 +7,7 @@ button.mercadopago-button {
 }
 
 .creditCardForm {
-    max-width: 700px;
+    max-width: 100%;
     background-color: #fff;
     overflow: hidden;
     padding: 25px;
@@ -30,7 +30,7 @@ button.mercadopago-button {
 .creditCardForm .payment {
     width: 100%;
     float: left;
-    font-size: 18px;
+    font-size: 16px;
     padding: 10px 25px;
     margin-top: 20px;
     position: relative;
