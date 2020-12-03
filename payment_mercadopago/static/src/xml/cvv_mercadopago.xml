@@ -4,7 +4,7 @@
         <t t-name="payment_mercadopago.cvv_mercadopago">
             <div class="">
                     <div class="heading">
-                        <h5 style="text-align: center;">Introduzca el Código de Seguridad</h5>
+                        <h6 style="text-align: center;">Introduzca el Código de Seguridad</h6>
                     </div>
             </div>
             <div class="payment">
@@ -14,7 +14,7 @@
                        oncopy="return false" oncut="return false"
                          ondrag="return false" ondrop="return false" autocomplete="off"
                     style="border:0; border-bottom:1px solid #ccc; font-size: 16px; width: 100%;"/>
-                    <label for="docNumber" style="color: #ccc;cursor: inherit;text-rendering: optimizeLegibility;display: block;top: 20px;font-size: 16px;font-weight: 400;white-space: nowrap;overflow: hidden;text-overflow: ellipsis;width: 100%;">Código de Seguridad</label>
+                    <label for="docNumber" style="cursor: inherit;text-rendering: optimizeLegibility;display: block;top: 20px;font-size: 16px;font-weight: 400;white-space: nowrap;overflow: hidden;text-overflow: ellipsis;width: 100%;">Código de Seguridad</label>
                 </div>
             </div>
         </t>
