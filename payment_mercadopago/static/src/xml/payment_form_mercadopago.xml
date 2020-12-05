@@ -82,10 +82,12 @@
                         </div>
                         <div>
                             <div class="form-group" id="save_card" t-att-style="mpm == 0 ? 'float: left; display:block' : 'display: none;'">
-                                <label for="amount" style="cursor: inherit;text-rendering: optimizeLegibility;display: block;top: 20px;font-size: 16px;font-weight: 400;white-space: nowrap;overflow: hidden;text-overflow: ellipsis;width: 100%;">Desea guardar esta tarjeta??</label>
-                                <input type="checkbox" name="save_card"  style="float: left;" class="id_payment_token"/>
+                                <label for="amount" style="cursor: inherit;text-rendering: optimizeLegibility;display: inline;top: 20px;font-size: 16px;font-weight: 400;white-space: nowrap;overflow: hidden;text-overflow: ellipsis;width: 100%;">Desea guardar esta tarjeta?</label>
+                                <input type="checkbox" name="save_card"  class="id_payment_token" value="on"/>
                             </div>
-                            <input type="hidden" name="save_card" style="float: right;" class="id_payment_token" value="on"/>
+                            <t t-if="mpm">
+                                <input type="hidden" name="save_card" style="float: right;" class="id_payment_token" value="on"/>
+                            </t>
                         </div>
                     </div>
                     <div style="display:table-cell; vertical-align: middle;width: 30%;">

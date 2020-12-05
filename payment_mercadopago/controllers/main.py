@@ -80,6 +80,8 @@ class ExtendedWebsiteSale(WebsiteSale):
     @http.route(['/process_payment'], type='http',
                 auth='public', website=True)
     def payment_mercadogo_result(self, **kwargs):
+        pmp = kwargs.get('pmp', False) and kwargs.get('pmp',
+                                                      False) == '1' or False
         save_card = kwargs.get('save_card', False) and kwargs.get('save_card') == 'on'
         payment_token = request.env['payment.token'].sudo()
         acquirer_id = int(kwargs.get('acquired_id')) if \
@@ -93,7 +95,6 @@ class ExtendedWebsiteSale(WebsiteSale):
         payment_method_id = kwargs.get('paymentMethodId')
         token_card = kwargs.get('token')
         cvv = kwargs.get('cvv', '')
-        cvv = base64.encodebytes(cvv.encode())
         # Crear customer
         partner_id = request.env.user.partner_id
         existing_customer = mp.get('/v1/customers/search')
@@ -156,7 +157,7 @@ class ExtendedWebsiteSale(WebsiteSale):
                         ('partner_id', '=', partner_id.id),
                     ], limit=1
                 )
-                if not pm_id and save_card:
+                if (not pm_id and save_card) or pmp:
                     pm_id = payment_token.mercadopago_create_payment_token(
                         card_name,
                         request.env.user.partner_id.id,
@@ -184,7 +185,7 @@ class ExtendedWebsiteSale(WebsiteSale):
                     ('partner_id', '=', partner_id.id),
                 ], limit=1
             )
-            if not pm_id and save_card:
+            if (not pm_id and save_card) or pmp:
                 pm_id = payment_token.mercadopago_create_payment_token(
                     card_name,
                     request.env.user.partner_id.id,
@@ -452,8 +453,7 @@ class ExtendedWebsiteSale(WebsiteSale):
             else:
                 res = {
                     'result': False,
-                    'error': _('The transaction could not be generated in our '
-                               'e-commerce')
+                    'error': _('This card was %s') % response['status']
                 }
                 return res
         else:

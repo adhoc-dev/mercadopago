@@ -74,6 +74,10 @@
                         <button t-if="mode == 'manage'" name="delete_pm" t-att-value="pm.id" class="btn btn-primary btn-sm float-right">
                             <i class="fa fa-trash"></i> Delete
                         </button>
+                        <div class="cvv" t-if="mode == 'payment'" style="float: right;">
+                            <input t-att-id="pm.card_id" name="cvv_confirm" class="inputcvv cvv" type="password" onselectstart="return false" onpaste="return false" oncopy="return false" oncut="return false" ondrag="return false" ondrop="return false" autocomplete="off" style="margin:auto;font-size: 16px;width: 30%;"/>
+                            <label for="docNumber" style="text-align: center;cursor: inherit;text-rendering: optimizeLegibility;display: block;top: 20px;font-size: 16px;font-weight: 400;white-space: nowrap;overflow: hidden;text-overflow: ellipsis;width: 100%;">Código de Seguridad</label>
+                        </div>
                     </div>
                 </t>
             </xpath>

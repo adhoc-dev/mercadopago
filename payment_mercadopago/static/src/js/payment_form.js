@@ -145,6 +145,25 @@ odoo.define('payment_mercadopago.payment_form', function(require) {
     var templatecvv = ajax.loadXML('/payment_mercadopago/static/src/xml/cvv_mercadopago.xml', Qweb);
 
     PaymentForm.include({
+
+        start: function () {
+//            this._adaptPayButton();
+            var self = this;
+            return this._super.apply(this, arguments).then(function () {
+                self.options = _.extend(self.$el.data(), self.options);
+                self.updateNewPaymentDisplayStatus();
+                $('[data-toggle="tooltip"]').tooltip();
+                $('div.cvv').hide();
+                // $('input.cvv').prop("required", true);
+            });
+        },
+        radioClickEvent: function (ev) {
+            $('div.cvv').hide();
+            $(ev.currentTarget).find('div.cvv').show();
+            $(ev.currentTarget).find('input.cvv').prop('required',true);
+            $(ev.currentTarget).find('input[type="radio"]').prop("checked", true);
+            this.updateNewPaymentDisplayStatus();
+        },
         /**
          * called when clicking on pay now or add payment event to create token for credit card/debit card.
          *
@@ -363,163 +382,235 @@ odoo.define('payment_mercadopago.payment_form', function(require) {
 
                     var acquirerID = this.getAcquirerIdFromRadio($checkedRadio);
                     var card_id = $checkedRadio.data('card_id');
-                    var token_id = $checkedRadio.val();
-                    templatecvv.finally(
-                        ajax.jsonRpc('/get_public_key',
-                        'call',
-                        {
-                            acquirer_id: acquirerID,
-                        }).then(function(data) {
-                                new Dialog(this, {
-                                    title: _t("Código de Seguridad"),
-                                    size: 'small',
-                                    $content: Qweb.render('payment_mercadopago.cvv_mercadopago', {}),
-                                    buttons: [
-                                        {
-                                            text: _t("Pagar"),
-                                            classes: 'btn-primary',
-                                            click: function () {
-                                                $.blockUI();
-                                                var cvv = this.$('#securityCode_confirm').val();
-                                                if (cvv == ''){
+                    var cvv = $('input#'+card_id).val()
+                    if(/^(?:\D*\d){3}\D*$/.test(cvv))
+                    {
+                        var token_id = $checkedRadio.val();
+
+                        templatecvv.finally(
+                            ajax.jsonRpc('/get_public_key',
+                                'call',
+                                {
+                                    acquirer_id: acquirerID,
+                                }).then(function (data) {
+                                    let $form = $(
+                                    "<form>" +
+                                    "<li>" +
+                                    "<select id=\"cardId\" name=\"cardId\" data-checkout='cardId'>" +
+                                    "<option value=\"" + card_id + "\">" +
+                                    "</select>" +
+                                    "</li>" +
+                                    "<li id=\"cvv\">" +
+                                    "<input type=\"text\" id=\"cvv\" data-checkout=\"securityCode\" value=\"" + cvv + "\" />" +
+                                    "</li>" +
+                                    "</form>");
+                                    window.Mercadopago.setPublishableKey(data.mercadopago_publishable_key);
+                                    window.Mercadopago.getIdentificationTypes();
+                                    window.Mercadopago.createToken($form, function (status, response) {
+                                        if (status == 200 || status == 201) {
+                                            $.blockUI();
+                                            var token = response.id;
+                                            ajax.jsonRpc(
+                                                '/payment/existing_card/mercadopago',
+                                                'call', {
+                                                    token: token,
+                                                    token_id: token_id,
+                                                    acquirer_id: acquirerID,
+                                                }
+                                            ).then(function (data) {
+                                                // if the server has returned true
+                                                if (data.result) {
                                                     $.unblockUI();
-                                                    self.displayError(_t('Advertencia!!!'),
-                                                                    _t('Introduzca el CVV por favor.'));
+                                                    form1.submit();
+                                                    return $.Deferred();
                                                 }
+                                                // if the server has returned false, we display an error
                                                 else {
-                                                    let $form = $(
-                                                        "<form>" +
-                                                        "<li>" +
-                                                        "<select id=\"cardId\" name=\"cardId\" data-checkout='cardId'>" +
-                                                        "<option value=\"" + card_id + "\">" +
-                                                        "</select>" +
-                                                        "</li>" +
-                                                        "<li id=\"cvv\">" +
-                                                        "<input type=\"text\" id=\"cvv\" data-checkout=\"securityCode\" value=\"" + cvv + "\" />" +
-                                                        "</li>" +
-                                                        "</form>");
-                                                    window.Mercadopago.setPublishableKey(data.mercadopago_publishable_key);
-                                                    window.Mercadopago.getIdentificationTypes();
-                                                    window.Mercadopago.createToken($form, function (status, response) {
-                                                        if (status == 200 || status == 201) {
-                                                            var token = response.id;
-                                                            ajax.jsonRpc(
-                                                                '/payment/existing_card/mercadopago',
-                                                                'call', {
-                                                                    token: token,
-                                                                    token_id: token_id,
-                                                                    acquirer_id: acquirerID,
-                                                                }
-                                                            ).then(function (data) {
-                                                                // if the server has returned true
-                                                                if (data.result) {
-                                                                    $.unblockUI();
-                                                                    form1.submit();
-                                                                    return $.Deferred();
-                                                                }
-                                                                // if the server has returned false, we display an error
-                                                                else {
-                                                                    $.unblockUI();
-                                                                    if (data.error) {
-                                                                        self.displayError(
-                                                                            '',
-                                                                            data.error);
-                                                                    } else { // if the server doesn't provide an error message
-                                                                        self.displayError(
-                                                                            _t('Server Error'),
-                                                                            _t('e.g. Your credit card details are wrong. Please verify.'));
-                                                                    }
-                                                                }
-                                                                // here we remove the 'processing' icon from the 'add a new payment' button
-                                                                $(button).attr('disabled', false);
-                                                                $(button).children('.fa').addClass('fa-plus-circle')
-                                                                $(button).find('span.o_loader').remove();
-                                                                $.unblockUI();
-                                                            });
-                                                        }
-                                                        else {
-                                                            if (response.cause) {
-                                                                var msg = ERRORS[response.cause[0].code];
-                                                                alert("Verifique algunos datos del formulario!\n" + msg)
-                                                            }
-                                                        }
-                                                    });
+                                                    $.unblockUI();
+                                                    if (data.error) {
+                                                        self.displayError(
+                                                            '',
+                                                            data.error);
+                                                    } else { // if the server doesn't provide an error message
+                                                        self.displayError(
+                                                            _t('Server Error'),
+                                                            _t('e.g. Your credit card details are wrong. Please verify.'));
+                                                    }
                                                 }
-                                            },
-                                        },
-                                        {
-                                            text: _t("Cerrar"),
-                                            close: true,
-                                        },
-                                    ],
-                                }).open();
+                                                // here we remove the 'processing' icon from the 'add a new payment' button
+                                                $(button).attr('disabled', false);
+                                                $(button).children('.fa').addClass('fa-plus-circle')
+                                                $(button).find('span.o_loader').remove();
+                                                $.unblockUI();
+                                            });
+                                        }
+                                        else {
+                                            if (response.cause) {
+                                                var msg = ERRORS[response.cause[0].code];
+                                                if (msg == undefined){
+                                                    msg = response.cause[0].description;
+                                                }
+                                                alert("Ocurrió un error!\n" + msg +
+                                                    "\nPlease refresh the browser web.")
+                                            }
+                                        }
+                                    });
+                                // new Dialog(this, {
+                                //     title: _t("Código de Seguridad"),
+                                //     size: 'small',
+                                //     $content: Qweb.render('payment_mercadopago.cvv_mercadopago', {}),
+                                //     buttons: [
+                                //         {
+                                //             text: _t("Pagar"),
+                                //             classes: 'btn-primary',
+                                //             click: function () {
+                                //                 $.blockUI();
+                                //                 var cvv = this.$('#securityCode_confirm').val();
+                                //                 if (cvv == '') {
+                                //                     $.unblockUI();
+                                //                     self.displayError(_t('Advertencia!!!'),
+                                //                         _t('Introduzca el CVV por favor.'));
+                                //                 }
+                                //                 else {
+                                //                     let $form = $(
+                                //                         "<form>" +
+                                //                         "<li>" +
+                                //                         "<select id=\"cardId\" name=\"cardId\" data-checkout='cardId'>" +
+                                //                         "<option value=\"" + card_id + "\">" +
+                                //                         "</select>" +
+                                //                         "</li>" +
+                                //                         "<li id=\"cvv\">" +
+                                //                         "<input type=\"text\" id=\"cvv\" data-checkout=\"securityCode\" value=\"" + cvv + "\" />" +
+                                //                         "</li>" +
+                                //                         "</form>");
+                                //                     // window.Mercadopago.setPublishableKey(data.mercadopago_publishable_key);
+                                //                     // window.Mercadopago.getIdentificationTypes();
+                                //                     // window.Mercadopago.createToken($form, function (status, response) {
+                                //                     //     if (status == 200 || status == 201) {
+                                //                     //         var token = response.id;
+                                //                     //         ajax.jsonRpc(
+                                //                     //             '/payment/existing_card/mercadopago',
+                                //                     //             'call', {
+                                //                     //                 token: token,
+                                //                     //                 token_id: token_id,
+                                //                     //                 acquirer_id: acquirerID,
+                                //                     //             }
+                                //                     //         ).then(function (data) {
+                                //                     //             // if the server has returned true
+                                //                     //             if (data.result) {
+                                //                     //                 $.unblockUI();
+                                //                     //                 form1.submit();
+                                //                     //                 return $.Deferred();
+                                //                     //             }
+                                //                     //             // if the server has returned false, we display an error
+                                //                     //             else {
+                                //                     //                 $.unblockUI();
+                                //                     //                 if (data.error) {
+                                //                     //                     self.displayError(
+                                //                     //                         '',
+                                //                     //                         data.error);
+                                //                     //                 } else { // if the server doesn't provide an error message
+                                //                     //                     self.displayError(
+                                //                     //                         _t('Server Error'),
+                                //                     //                         _t('e.g. Your credit card details are wrong. Please verify.'));
+                                //                     //                 }
+                                //                     //             }
+                                //                     //             // here we remove the 'processing' icon from the 'add a new payment' button
+                                //                     //             $(button).attr('disabled', false);
+                                //                     //             $(button).children('.fa').addClass('fa-plus-circle')
+                                //                     //             $(button).find('span.o_loader').remove();
+                                //                     //             $.unblockUI();
+                                //                     //         });
+                                //                     //     }
+                                //                     //     else {
+                                //                     //         if (response.cause) {
+                                //                     //             var msg = ERRORS[response.cause[0].code];
+                                //                     //             alert("Verifique algunos datos del formulario!\n" + msg)
+                                //                     //         }
+                                //                     //     }
+                                //                     // });
+                                //                 }
+                                //             },
+                                //         },
+                                //         {
+                                //             text: _t("Cerrar"),
+                                //             close: true,
+                                //         },
+                                //     ],
+                                // }).open();
                             })
                         );
-                    // ajax.jsonRpc('/get_cvv',
-                    //     'call',
-                    //     {
-                    //         acquirer_id: acquirerID,
-                    //         card_id:card_id
-                    //     }).then(function(data) {
-                    //         let $form = $(
-                    //             "<form>" +
-                    //                 "<li>" +
-                    //                     "<select id=\"cardId\" name=\"cardId\" data-checkout='cardId'>" +
-                    //                     "<option value=\""+ card_id +"\">" +
-                    //                     "</select>" +
-                    //                 "</li>" +
-                    //                 "<li id=\"cvv\">" +
-                    //                     "<input type=\"text\" id=\"cvv\" data-checkout=\"securityCode\" value=\"" + data.cvv +"\" />" +
-                    //                 "</li>"  +
-                    //             "</form>");
-                    //         window.Mercadopago.setPublishableKey(data.mercadopago_publishable_key);
-                    //                 window.Mercadopago.getIdentificationTypes();
-                    //         window.Mercadopago.createToken($form, function (status, response)
-                    //         {
-                    //              if (status == 200 || status == 201) {
-                    //                  var token = response.id;
-                    //                  ajax.jsonRpc(
-                    //                      '/payment/existing_card/mercadopago',
-                    //                      'call', {
-                    //                          // token: token,
-                    //                          token_id: token_id,
-                    //                          acquirer_id: acquirerID,
-                    //                      }
-                    //                  ).then(function (data) {
-                    //                     // if the server has returned true
-                    //                     if (data.result) {
-                    //                         $.unblockUI();
-                    //                         form1.submit();
-                    //                         return $.Deferred();
-                    //                     }
-                    //                     // if the server has returned false, we display an error
-                    //                     else {
-                    //                         $.unblockUI();
-                    //                         if (data.error) {
-                    //                             self.displayError(
-                    //                                 '',
-                    //                                 data.error);
-                    //                         } else { // if the server doesn't provide an error message
-                    //                             self.displayError(
-                    //                                 _t('Server Error'),
-                    //                                 _t('e.g. Your credit card details are wrong. Please verify.'));
-                    //                         }
-                    //                     }
-                    //                     // here we remove the 'processing' icon from the 'add a new payment' button
-                    //                     $(button).attr('disabled', false);
-                    //                     $(button).children('.fa').addClass('fa-plus-circle')
-                    //                     $(button).find('span.o_loader').remove();
-                    //                     $.unblockUI();
-                    //                 });
-                                 // }
-                                 // else {
-                                 //     if (response.cause) {
-                                 //         var msg = ERRORS[response.cause[0].code]
-                                 //         alert("Verifique algunos datos del formulario!\n" + msg)
-                                 //     }
-                                 // }
-                            // });
-                    // });
+                        // ajax.jsonRpc('/get_cvv',
+                        //     'call',
+                        //     {
+                        //         acquirer_id: acquirerID,
+                        //         card_id:card_id
+                        //     }).then(function(data) {
+                        //         let $form = $(
+                        //             "<form>" +
+                        //                 "<li>" +
+                        //                     "<select id=\"cardId\" name=\"cardId\" data-checkout='cardId'>" +
+                        //                     "<option value=\""+ card_id +"\">" +
+                        //                     "</select>" +
+                        //                 "</li>" +
+                        //                 "<li id=\"cvv\">" +
+                        //                     "<input type=\"text\" id=\"cvv\" data-checkout=\"securityCode\" value=\"" + data.cvv +"\" />" +
+                        //                 "</li>"  +
+                        //             "</form>");
+                        //         window.Mercadopago.setPublishableKey(data.mercadopago_publishable_key);
+                        //                 window.Mercadopago.getIdentificationTypes();
+                        //         window.Mercadopago.createToken($form, function (status, response)
+                        //         {
+                        //              if (status == 200 || status == 201) {
+                        //                  var token = response.id;
+                        //                  ajax.jsonRpc(
+                        //                      '/payment/existing_card/mercadopago',
+                        //                      'call', {
+                        //                          // token: token,
+                        //                          token_id: token_id,
+                        //                          acquirer_id: acquirerID,
+                        //                      }
+                        //                  ).then(function (data) {
+                        //                     // if the server has returned true
+                        //                     if (data.result) {
+                        //                         $.unblockUI();
+                        //                         form1.submit();
+                        //                         return $.Deferred();
+                        //                     }
+                        //                     // if the server has returned false, we display an error
+                        //                     else {
+                        //                         $.unblockUI();
+                        //                         if (data.error) {
+                        //                             self.displayError(
+                        //                                 '',
+                        //                                 data.error);
+                        //                         } else { // if the server doesn't provide an error message
+                        //                             self.displayError(
+                        //                                 _t('Server Error'),
+                        //                                 _t('e.g. Your credit card details are wrong. Please verify.'));
+                        //                         }
+                        //                     }
+                        //                     // here we remove the 'processing' icon from the 'add a new payment' button
+                        //                     $(button).attr('disabled', false);
+                        //                     $(button).children('.fa').addClass('fa-plus-circle')
+                        //                     $(button).find('span.o_loader').remove();
+                        //                     $.unblockUI();
+                        //                 });
+                        // }
+                        // else {
+                        //     if (response.cause) {
+                        //         var msg = ERRORS[response.cause[0].code]
+                        //         alert("Verifique algunos datos del formulario!\n" + msg)
+                        //     }
+                        // }
+                        // });
+                        // });
+                    }
+                    else {
+                        self.displayError(
+                        _t('Código de Seguridad'),
+                        _t('Código de Seguridad No Válido.'));
+                    }
                 } else {
                     this._super.apply(this, arguments);
                 }

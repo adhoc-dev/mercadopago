@@ -8,7 +8,7 @@
                     </div>
             </div>
             <div class="payment">
-                <div class="form-group" id="CVV">
+                <div class="form-group hi" id="CVV">
                     <input id="securityCode_confirm"  name="cvv_confirm" class="form-control" type="text"
                        onselectstart="return false" onpaste="return false"
                        oncopy="return false" oncut="return false"
