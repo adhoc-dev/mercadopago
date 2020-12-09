@@ -82,6 +82,7 @@ class ExtendedWebsiteSale(WebsiteSale):
     def payment_mercadogo_result(self, **kwargs):
         pmp = kwargs.get('pmp', False) and kwargs.get('pmp',
                                                       False) == '1' or False
+        email = kwargs.get('email', False)
         save_card = kwargs.get('save_card', False) and kwargs.get('save_card') == 'on'
         payment_token = request.env['payment.token'].sudo()
         acquirer_id = int(kwargs.get('acquired_id')) if \
@@ -97,6 +98,7 @@ class ExtendedWebsiteSale(WebsiteSale):
         cvv = kwargs.get('cvv', '')
         # Crear customer
         partner_id = request.env.user.partner_id
+        email = email or partner_id.email
         existing_customer = mp.get('/v1/customers/search')
         exist_customer = False
         pm_id = False
@@ -114,7 +116,7 @@ class ExtendedWebsiteSale(WebsiteSale):
             if not partner_id.mp_id:
                 # TODO: Hacer esto con comprension de listo
                 for cust in existing_customer.get('response').get('results'):
-                    if not cust.get('email') == partner_id.email:
+                    if cust.get('email') != email:
                         exist_customer = False
                     else:
                         exist_customer = cust.get('id')
@@ -123,7 +125,7 @@ class ExtendedWebsiteSale(WebsiteSale):
                 exist_customer = partner_id.mp_id
         if not exist_customer:
             customer_data = {
-                "email": partner_id.email,
+                "email": email or partner_id.email,
                 "first_name": partner_id.name,
                 "last_name": partner_id.lastname,
                 "identification": {
@@ -216,14 +218,12 @@ class ExtendedWebsiteSale(WebsiteSale):
 
         if save_card:
             payment_token = request.env['payment.token'].browse(payment_token_id)
-            email = payment_token.partner_id.email
+            email = email or payment_token.partner_id.email
             payment_id = payment_token.acquirer_id
             partner_id = payment_token.partner_id
             issuer_id = payment_token.issuer_id
             installments = payment_token.installments
             payment_method_id = payment_token.payment_method_id
-        else:
-            email = kwargs.get('email', '')
 
         pmp = kwargs.get('pmp', False) and kwargs.get('pmp', False) == '1' or False
         if not order_id or pmp:
@@ -236,7 +236,7 @@ class ExtendedWebsiteSale(WebsiteSale):
                                "vendas na hora",
                 "payment_method_id": payment_method_id,
                 "payer": {
-                    "email": email,
+                    "email": email or partner_id.email,
                 },
                 'capture': True
             }
@@ -247,6 +247,8 @@ class ExtendedWebsiteSale(WebsiteSale):
             if payment_result.get('status') == 201:
                 response = payment_result.get('response')
                 if response['status'] == 'approved':
+                    if not partner_id.email and email:
+                        partner_id.email = email
                     return http.redirect_with_hash('/my/payment_method')
                 else:
                     if order_id:
@@ -322,7 +324,7 @@ class ExtendedWebsiteSale(WebsiteSale):
                            "vendas na hora",
             "payment_method_id": payment_method_id,
             "payer": {
-                "email": email,
+                "email": email or partner_id.email,
             }
         }
         if issuer_id:
@@ -333,6 +335,8 @@ class ExtendedWebsiteSale(WebsiteSale):
             response = payment_result.get('response')
             if response['status'] == 'approved':
                 order_id.action_confirm()
+                if email:
+                    partner_id.email = email
                 transaction_id.state = 'done'
             else:
                 if order_id:
@@ -473,7 +477,7 @@ class ExtendedWebsiteSale(WebsiteSale):
                 type='json', auth="public")
     def get_mercadopago_authorize_amount(self, **kwargs):
         acquirer_id = kwargs.get('acquirer_id')
-        email = request.env.user.email
+        email = request.env.user.partner_id.email
         mercadopago_authorize_amount = request.env['payment.acquirer'].browse(acquirer_id).mercadopago_authorize_amount
         return dict(
             mercadopago_authorize_amount=mercadopago_authorize_amount,

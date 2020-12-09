@@ -147,7 +147,6 @@ odoo.define('payment_mercadopago.payment_form', function(require) {
     PaymentForm.include({
 
         start: function () {
-//            this._adaptPayButton();
             var self = this;
             return this._super.apply(this, arguments).then(function () {
                 self.options = _.extend(self.$el.data(), self.options);
@@ -180,7 +179,6 @@ odoo.define('payment_mercadopago.payment_form', function(require) {
         },
         _createMercadoPagoToken: function(ev, $checkedRadio, addPmEvent) {
             var self = this;
-            console.log(session);
             if (ev.type === 'submit') {
                 var button = $(ev.target).find('*[type="submit"]')[0]
             } else {
@@ -206,7 +204,7 @@ odoo.define('payment_mercadopago.payment_form', function(require) {
                                     {
                                         'acquired_id': acquirerID,
                                         'mercadopago_authorize_amount': data.mercadopago_authorize_amount,
-                                        'email': data.email,
+                                        'email': data.email || '',
                                         'tamount': 0.0,
                                         'mpm':1
                                     }),

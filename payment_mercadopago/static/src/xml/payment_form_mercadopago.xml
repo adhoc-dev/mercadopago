@@ -12,9 +12,9 @@
                 </t>
                 <div class="creditCardForm" style="display:table">
                     <div style="display:table-cell; vertical-align: middle;width: 40%;">
-                        <div class="">
+                        <div class="" t-att-style="email ? 'display: none;' : ''">
                             <div class="form-group" id="email" style="display:block">
-                                <input id="email" class="form-control" style="color:#ccc !important; border:0; border-bottom:1px solid #ccc; font-size: 16px; width: 100%;" name="email" type="text" t-att-value="email" readonly="True"/>
+                                <input id="email" class="form-control" style="color:#ccc !important; border:0; border-bottom:1px solid #ccc; font-size: 16px; width: 100%;" name="email" type="text" t-att-value="email" required="True"/>
                                 <label for="email" style="cursor: inherit;text-rendering: optimizeLegibility;display: block;top: 20px;font-size: 16px;font-weight: 400;white-space: nowrap;overflow: hidden;text-overflow: ellipsis;width: 100%;">E-mail</label>
                            </div>
                         </div>
@@ -82,8 +82,8 @@
                         </div>
                         <div>
                             <div class="form-group" id="save_card" t-att-style="mpm == 0 ? 'float: left; display:block' : 'display: none;'">
-                                <label for="amount" style="cursor: inherit;text-rendering: optimizeLegibility;display: inline;top: 20px;font-size: 16px;font-weight: 400;white-space: nowrap;overflow: hidden;text-overflow: ellipsis;width: 100%;">Desea guardar esta tarjeta?</label>
-                                <input type="checkbox" name="save_card"  class="id_payment_token" value="on"/>
+                                <label for="amount" style="cursor: inherit;text-rendering: optimizeLegibility;display: inline;top: 20px;font-size: 16px;font-weight: 400;white-space: nowrap;overflow: hidden;text-overflow: ellipsis;width: 100%;">Desea guardar esta tarjeta??</label>
+                                <input type="checkbox" name="save_card"  class="id_payment_token"/>
                             </div>
                             <t t-if="mpm">
                                 <input type="hidden" name="save_card" style="float: right;" class="id_payment_token" value="on"/>
