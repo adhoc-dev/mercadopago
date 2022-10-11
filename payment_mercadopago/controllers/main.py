@@ -84,16 +84,17 @@ class MercadoPagoController(http.Controller):
         :return: Status 200 to acknowledge the notification
         :rtype: Response
         """
-        data = json.loads(request.httprequest.data)
-        _logger.info("MercadoPago notification: \n%s", pprint.pformat(data))
-        if data['type'] == 'payment':
+        params = dict(http.request.params)
+
+        _logger.debug("MercadoPago notification: \n%s", pprint.pformat(params))
+        if params['topic'] == 'payment':
             try:
                 # Payment ID
-                payment_id = data['data']['id']
+                payment_id = params['id']
 
                 # Get payment data from MercadoPago
-                leaf=[('provider', '=', 'mercadopago')]
-                #For backward compatibility, add the aquirer_id separately.
+                leaf = [('provider', '=', 'mercadopago')]
+                # For backward compatibility, add the aquirer_id separately.
                 if aquirer_id:
                     leaf += [('id', '=', int(aquirer_id))]
                 acquirer = request.env["payment.acquirer"].sudo().search(leaf, limit=1)
