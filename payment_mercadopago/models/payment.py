@@ -7,6 +7,7 @@ import werkzeug
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 from odoo.addons.payment.models.payment_acquirer import ValidationError
+
 from odoo.http import request
 from ..controllers.main import MercadoPagoController
 
@@ -245,7 +246,7 @@ class PaymentTransactionMercadoPago(models.Model):
             error = (
                 'Received unrecognized status for MercadoPago payment %s: %s, '
                 'set as error' % (self.reference, status))
-            _logger.info(error)
+            _logger.error(error)
             data.update(state_message=error)
             self.write(data)
             self._set_transaction_error(error)
@@ -264,7 +265,12 @@ class PaymentTransactionMercadoPago(models.Model):
         # If the token is not verified then is a new card so we have de cvv_token in the self.payment_token_id.token
         # If not, if the payment cames from token WITH cvv the cvv_token will be in the session.
         # Else, we do not have cvv_token, it's a payment without cvv
-        cvv_token = request.session.pop('cvv_token', None) if request and self.payment_token_id.verified else self.payment_token_id.token
+        if request and self.payment_token_id.verified:
+            cvv_token = request.session.pop('cvv_token', None)
+        elif request and not self.payment_token_id.verified:
+            cvv_token = request.session.pop('cvv_token', None) if request and self.payment_token_id.verified else self.payment_token_id.token
+        else:
+            cvv_token = False
 
         capture = self.type != 'validation'
 
@@ -309,7 +315,7 @@ class PaymentTransactionMercadoPago(models.Model):
                 error = ERROR_MESSAGES[status_detail] % self.payment_token_id.acquirer_ref
             except TypeError:
                 error = ERROR_MESSAGES[status_detail]
-            _logger.info(error)
+            _logger.error(error)
             self.write({
                 'acquirer_reference': tree.get('id'),
             })
@@ -317,7 +323,7 @@ class PaymentTransactionMercadoPago(models.Model):
             res = False
         else:
             error = "Error en la transacción"
-            _logger.info(error)
+            _logger.error(error)
             self.write({
                 'acquirer_reference': tree.get('id'),
             })
@@ -338,7 +344,8 @@ class PaymentTransactionMercadoPago(models.Model):
         Free the captured amount
         '''
         MP = MercadoPagoAPI(self.acquirer_id)
-        MP.payment_cancel(int(self.acquirer_reference))
+        # por ahora desactivo esto
+        # MP.ensure_payment_refund(int(self.acquirer_reference))
 
     def get_tx_info_from_mercadopago(self):
         self.ensure_one()
@@ -346,7 +353,13 @@ class PaymentTransactionMercadoPago(models.Model):
             raise UserError(_('acquirer not is Mercadopago'))
         MP = MercadoPagoAPI(self.acquirer_id)
         payment = MP.get_payment(int(self.acquirer_reference))
-        raise UserError("%s" % payment)
+        txt = ['%s: %s' % (x, payment[x]) for x in payment]
+        try:
+            self._mercadopago_s2s_validate_tree(payment)
+        except:
+            _logger.error('cant validate_tree')
+
+        raise UserError("%s" % ' \n'.join(txt))
 
 
 class PaymentToken(models.Model):
@@ -358,6 +371,35 @@ class PaymentToken(models.Model):
     save_token = fields.Boolean('Save Token', default=True, readonly=True)
     token = fields.Char('Token', readonly=True)
     installments = fields.Integer('Installments', readonly=True)
+
+
+    VALIDATION_AMOUNTS = {
+        'CAD': 2.45,
+        'EUR': 1.50,
+        'GBP': 1.00,
+        'JPY': 200,
+        'AUD': 2.00,
+        'NZD': 3.00,
+        'CHF': 3.00,
+        'HKD': 15.00,
+        'SEK': 15.00,
+        'DKK': 12.50,
+        'PLN': 6.50,
+        'NOK': 15.00,
+        'HUF': 400.00,
+        'CZK': 50.00,
+        'BRL': 4.00,
+        'MYR': 10.00,
+        'MXN': 20.00,
+        'ILS': 8.00,
+        'PHP': 100.00,
+        'TWD': 70.00,
+        'THB': 70.00,
+        'ARS': 5.00,
+        'USD': 2.00
+        }
+
+
 
     @api.model
     def mercadopago_create(self, values):
