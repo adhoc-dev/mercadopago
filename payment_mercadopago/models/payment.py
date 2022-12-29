@@ -308,7 +308,7 @@ class PaymentTransactionMercadoPago(models.Model):
         # elif status_code == "authorized" and status_detail == "pending_capture":
         #     self._set_transaction_authorized()
         #     return True
-        elif status_code == "in_process":
+        elif status_code in ["in_process", "pending"]:
             self.write({'acquirer_reference': tree.get('id')})
             self._set_transaction_pending()
             res = True
