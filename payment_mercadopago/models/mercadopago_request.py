@@ -173,6 +173,8 @@ class MercadoPagoAPI():
             payment_token = tx.mercadopago_tmp_token if cvv and tx.mercadopago_tmp_token else self.get_card_token(token.card_token)
         elif 'mercadopago_token' in form_data:
             payment_token = form_data['mercadopago_token']
+        partner_email = token.email if token else form_data['email']
+        customer_id =  self.get_customer_profile(partner_email) if partner_email else None
 
         capture, validation_capture_method = self.validation_capture_method(tx, form_data, token)
 
@@ -186,8 +188,8 @@ class MercadoPagoAPI():
             "external_reference": tx.reference,
             "payer": {
                 "type": "customer",
-                "id": token.customer_id if token else None,
-                "email": token.email if token else form_data['email'],
+                "id": customer_id,
+                "email": partner_email,
                 "first_name": tx.partner_name,
             },
             "additional_info": {
